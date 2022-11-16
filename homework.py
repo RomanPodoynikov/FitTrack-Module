@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import List, Type
 
 
@@ -11,19 +11,15 @@ class InfoMessage:
     speed: float
     calories: float
 
-    message = ('Тип тренировки: {}; '
-               'Длительность: {:.3f} ч.; '
-               'Дистанция: {:.3f} км; '
-               'Ср. скорость: {:.3f} км/ч; '
-               'Потрачено ккал: {:.3f}.')
+    message = ('Тип тренировки: {training_type}; '
+               'Длительность: {duration:.3f} ч.; '
+               'Дистанция: {distance:.3f} км; '
+               'Ср. скорость: {speed:.3f} км/ч; '
+               'Потрачено ккал: {calories:.3f}.')
 
     def get_message(self) -> str:
         """Получить текст информационного сообщения."""
-        return self.message.format(self.training_type,
-                                   self.duration,
-                                   self.distance,
-                                   self.speed,
-                                   self.calories)
+        return self.message.format(**asdict(self))
 
 
 class Training:
@@ -55,15 +51,11 @@ class Training:
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
-        training_type = self.__class__.__name__
-        distance = self.get_distance()
-        speed = self.get_mean_speed()
-        calories = self.get_spent_calories()
-        return InfoMessage(training_type,
+        return InfoMessage(self.__class__.__name__,
                            self.duration,
-                           distance,
-                           speed,
-                           calories)
+                           self.get_distance(),
+                           self.get_mean_speed(),
+                           self.get_spent_calories())
 
 
 class Running(Training):
@@ -73,8 +65,7 @@ class Running(Training):
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий во время бега."""
-        speed = self.get_mean_speed()
-        return ((self.CALORIES_MEAN_SPEED_MULTIPLIER * speed
+        return ((self.CALORIES_MEAN_SPEED_MULTIPLIER * self.get_mean_speed()
                 + self.CALORIES_MEAN_SPEED_SHIFT) * self.weight
                 / self.M_IN_KM * self.duration * self.MIN_IN_H)
 
@@ -146,10 +137,11 @@ def read_package(workout_type: str, data: List[int]) -> Training:
         'RUN': Running,
         'WLK': SportsWalking
     }
-    try:
+    if workout_type not in training_type:
+        raise ValueError(f'{workout_type} не найден в наборе существующих '
+                         'ключей')
+    else:
         return training_type[workout_type](*data)
-    except KeyError:
-        raise KeyError('Ключ словаря не найден в наборе существующих ключей')
 
 
 def main(training: Training) -> None:
