@@ -140,8 +140,7 @@ def read_package(workout_type: str, data: List[int]) -> Training:
     if workout_type not in training_type:
         raise ValueError(f'{workout_type} не найден в наборе существующих '
                          'ключей')
-    else:
-        return training_type[workout_type](*data)
+    return training_type[workout_type](*data)
 
 
 def main(training: Training) -> None:
